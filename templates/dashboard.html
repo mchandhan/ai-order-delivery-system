@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — OrderMind AI{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+
+  <!-- ── Page Header ───────────────────────────────────────────────────── -->
+  <div class="dash-header">
+    <div>
+      <h1 class="dash-title">Orders Dashboard</h1>
+      <p class="dash-subtitle">Live view · auto-refreshes every 10 s</p>
+    </div>
+    <div class="dash-header-actions">
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Search ID, Part..." onkeydown="if(event.key==='Enter') filterTable()" />
+        <button class="btn-search" onclick="filterTable()">Search</button>
+      </div>
+      <select id="status-filter" onchange="filterTable()" class="status-select">
+        <option value="all">All Statuses</option>
+        <option value="received">Received</option>
+        <option value="in review">In Review</option>
+        <option value="accepted">Accepted</option>
+        <option value="completed">Completed</option>
+        <option value="rejected">Rejected</option>
+      </select>
+      <a href="/chat" class="btn-chat-link" id="go-to-chat">💬 Open Chat</a>
+    </div>
+  </div>
+
+  <!-- ── Stat Cards ─────────────────────────────────────────────────────── -->
+  <div class="stats-grid">
+    <div class="stat-card total" id="stat-total">
+      <div class="stat-icon">📦</div>
+      <div class="stat-value" id="stat-val-total">{{ stats.Total }}</div>
+      <div class="stat-label">Total Orders</div>
+    </div>
+    <div class="stat-card pending" id="stat-pending">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-value" id="stat-val-pending">{{ stats.Received or 0 }}</div>
+      <div class="stat-label">Received</div>
+    </div>
+    <div class="stat-card inprogress" id="stat-inprogress">
+      <div class="stat-icon">🔄</div>
+      <div class="stat-value" id="stat-val-inprogress">{{ stats['In Review'] or 0 }}</div>
+      <div class="stat-label">In Review</div>
+    </div>
+    <div class="stat-card accepted" id="stat-accepted">
+      <div class="stat-icon">✅</div>
+      <div class="stat-value" id="stat-val-accepted">{{ stats.Accepted }}</div>
+      <div class="stat-label">Accepted</div>
+    </div>
+    <div class="stat-card rejected" id="stat-rejected">
+      <div class="stat-icon">❌</div>
+      <div class="stat-value" id="stat-val-rejected">{{ stats.Rejected }}</div>
+      <div class="stat-label">Rejected</div>
+    </div>
+  </div>
+
+  <!-- ── Orders Table ──────────────────────────────────────────────────── -->
+  <div class="table-card" id="table-card">
+    <div class="table-card-header">
+      <h2 class="table-title">Order Records</h2>
+      <span class="table-count" id="table-count">{{ orders|length }} orders</span>
+    </div>
+    <div class="table-wrapper">
+      <table class="orders-table" id="orders-table">
+        <thead>
+          <tr>
+            <th onclick="sortBy('order_id')" style="cursor:pointer">ID <span id="sort-icon-order_id" class="sort-indicator">🔽</span></th>
+            <th onclick="sortBy('part')" style="cursor:pointer">Part <span id="sort-icon-part" class="sort-indicator"></span></th>
+            <th onclick="sortBy('material')" style="cursor:pointer">Material <span id="sort-icon-material" class="sort-indicator"></span></th>
+            <th onclick="sortBy('quantity')" style="cursor:pointer">Qty <span id="sort-icon-quantity" class="sort-indicator"></span></th>
+            <th onclick="sortBy('deadline')" style="cursor:pointer">Deadline <span id="sort-icon-deadline" class="sort-indicator"></span></th>
+            <th onclick="sortBy('status')" style="cursor:pointer">Status <span id="sort-icon-status" class="sort-indicator"></span></th>
+            <th>Latest Note</th>
+            <th onclick="sortBy('created_at')" style="cursor:pointer">Created <span id="sort-icon-created_at" class="sort-indicator"></span></th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="orders-tbody">
+          {% for order in orders %}
+          <tr class="order-row" data-id="{{ order.order_id }}" data-status="{{ order.status | lower }}"
+              onclick="toggleQualityLogs({{ order.order_id }}, this)">
+            <td class="td-id">#{{ order.order_id }}</td>
+            <td class="td-part">{{ order.part }}</td>
+            <td class="td-material">{{ order.material }}</td>
+            <td class="td-qty">{{ "{:,}".format(order.quantity) }}</td>
+            <td class="td-deadline">{{ order.deadline }}</td>
+            <td class="td-status">
+              <span class="status-badge status-{{ order.status | lower | replace(' ', '-') }}">
+                {{ order.status }}
+              </span>
+            </td>
+            <td class="td-note" style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ order.latest_log or '' }}">
+              {{ order.latest_log or '—' }}
+            </td>
+            <td class="td-created">{{ order.created_at[:10] if order.created_at else '—' }}</td>
+            <td class="td-actions" onclick="event.stopPropagation()">
+              <select class="inline-status-select" onchange="quickUpdateStatus({{ order.order_id }}, this.value)" title="Change status">
+                <option value="">Change…</option>
+                <option value="Received">Received</option>
+                <option value="In Review">In Review</option>
+                <option value="Accepted">Accepted</option>
+                <option value="Completed">Completed</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </td>
+          </tr>
+          <!-- Quality log expansion row -->
+          <tr class="ql-row" id="ql-row-{{ order.order_id }}" style="display:none;">
+            <td colspan="8">
+              <div class="ql-panel" id="ql-panel-{{ order.order_id }}">
+                <span class="ql-loading">Loading quality logs…</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => initDashboard());
+</script>
+{% endblock %}

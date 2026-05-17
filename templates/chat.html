@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Chat — OrderMind AI{% endblock %}
+
+{% block content %}
+<div class="chat-layout">
+
+  <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
+  <aside class="chat-sidebar" id="chat-sidebar">
+    <div class="sidebar-header">
+      <h2 class="sidebar-title">Recent Orders</h2>
+      <span class="sidebar-count" id="sidebar-count">{{ recent_orders|length }}</span>
+    </div>
+
+    <div class="sidebar-orders" id="sidebar-orders">
+      {% for order in recent_orders %}
+      <div class="sidebar-order-card" onclick="askAboutOrder({{ order.order_id }})">
+        <div class="soc-header">
+          <span class="soc-id">#{{ order.order_id }}</span>
+          <span class="soc-badge status-{{ order.status | lower | replace(' ', '-') }}">{{ order.status }}</span>
+        </div>
+        <div class="soc-part">{{ order.part }}</div>
+        <div class="soc-meta">{{ order.quantity }} units · {{ order.deadline }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <a href="/orders" class="sidebar-dashboard-btn" id="sidebar-dashboard-link">
+      📊 Open Full Dashboard
+    </a>
+  </aside>
+
+  <!-- ── Chat Panel ────────────────────────────────────────────────────── -->
+  <section class="chat-panel" id="chat-panel">
+
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="ai-avatar" id="chat-ai-avatar">
+          <span>🤖</span>
+          <span class="avatar-pulse"></span>
+        </div>
+        <div>
+          <h1 class="chat-title">OrderMind Assistant</h1>
+          <p class="chat-subtitle">Powered by Gemini 2.0 Flash</p>
+        </div>
+      </div>
+      <button class="clear-chat-btn" id="clear-chat-btn" title="Clear chat">🗑️</button>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages" id="chat-messages">
+      <!-- Welcome message injected by JS -->
+    </div>
+
+    <!-- Quick Chips -->
+    <div class="quick-chips" id="quick-chips">
+      <button class="chip" onclick="useChip(this)" data-msg="List all orders">📦 All Orders</button>
+      <button class="chip" onclick="useChip(this)" data-msg="Show me all pending orders">⏳ Pending</button>
+      <button class="chip" onclick="useChip(this)" data-msg="Show completed orders">✅ Completed</button>
+      <button class="chip" onclick="useChip(this)" data-msg="Show in progress orders">🔄 In Progress</button>
+    </div>
+
+    <!-- Input -->
+    <div class="chat-input-area">
+      <div class="input-wrapper">
+        <textarea
+          id="chat-input"
+          class="chat-input"
+          placeholder='Try: "Create an order for 100 steel shafts due July 15" or "Mark order #2 as completed"'
+          rows="1"
+          maxlength="1000"
+        ></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()" title="Send (Enter)">
+          <span class="send-icon">➤</span>
+        </button>
+      </div>
+      <p class="input-hint">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line</p>
+    </div>
+
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Page-specific: initialise chat
+  document.addEventListener("DOMContentLoaded", () => initChat());
+</script>
+{% endblock %}
